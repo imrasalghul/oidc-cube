@@ -2,9 +2,23 @@
 
 declare(strict_types=1);
 
-// Needed for plugin-only installations. Roundcube's root autoloader will already
-// have loaded this file when the plugin was installed with Composer.
-@include_once __DIR__ . '/vendor/autoload.php';
+// Prefer Roundcube's dependency tree when this plugin also has a local vendor
+// directory. Loading duplicate PEAR classes from both trees is fatal when mail
+// composition lazily initializes Mail_mime.
+$roundcubeMailMime = defined('RCUBE_INSTALL_PATH')
+    ? RCUBE_INSTALL_PATH . 'vendor/pear/mail_mime/Mail/mime.php'
+    : null;
+if (!class_exists('Mail_mime', false) && $roundcubeMailMime !== null && is_file($roundcubeMailMime)) {
+    require_once $roundcubeMailMime;
+}
+
+// Needed for plugin-only installations. Register it after Roundcube's root
+// autoloader so plugin dependencies cannot shadow host Roundcube classes.
+$oidcAutoloader = @include_once __DIR__ . '/vendor/autoload.php';
+if ($oidcAutoloader instanceof \Composer\Autoload\ClassLoader) {
+    $oidcAutoloader->unregister();
+    $oidcAutoloader->register(false);
+}
 
 use Jumbojett\OpenIDConnectClient;
 use Jumbojett\OpenIDConnectClientException;
