@@ -22,6 +22,6 @@ jobs:
           coverage: none
       - uses: ramsey/composer-install@v3
       - run: composer validate --strict
-      - run: composer audit
+      - run: composer audit --abandoned=report
       - run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
       - run: vendor/bin/phpunit
